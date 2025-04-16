@@ -303,24 +303,24 @@ class DENet( nn.Module ) :
 	# (HF_d + LF_l) VS (HF_l + LF_l) 增强模块提取高频信号效果好；输出图像是亮度良好的。
 	def forward( self , x_dark , x_light ) :
 		
-		# image = np.transpose( x_dark[ 0 ].detach().cpu().numpy() , (1 , 2 , 0) )  # 调整维度顺序 [C, H, W] → [H, W, C]
-		# image = (image * 255).astype( np.uint8 )
-		# plt.imshow( image )
-		# plt.axis( 'off' )
-		# # 保存图像到文件
-		# plt.savefig( f'暗化图.png' , bbox_inches = 'tight' , pad_inches = 0 , dpi = 800 )
+		image = np.transpose( x_dark[ 0 ].detach().cpu().numpy() , (1 , 2 , 0) )  # 调整维度顺序 [C, H, W] → [H, W, C]
+		image = (image * 255).astype( np.uint8 )
+		plt.imshow( image )
+		plt.axis( 'off' )
+		# 保存图像到文件
+		plt.savefig( f'暗化图.png' , bbox_inches = 'tight' , pad_inches = 0 , dpi = 800 )
 		
 		# HF1 HF2 HF3 LF
 		pyrs_d = self.lap_pyramid.pyramid_decom( img = x_dark )
 		pyrs_l = self.lap_pyramid.pyramid_decom( img = x_light )
 		
-		# for i in range( len(pyrs_d) ) :
-		# 	image = np.transpose( pyrs_d[i][ 0 ].detach().cpu().numpy() , (1 , 2 , 0) )  # 调整维度顺序 [C, H, W] → [H, W, C]
-		# 	image = (image * 255).astype( np.uint8 )
-		# 	plt.imshow( image )
-		# 	plt.axis( 'off' )
-		# 	# 保存图像到文件
-		# 	plt.savefig( f'HF_d_{ i}.png' , bbox_inches = 'tight' , pad_inches = 0 , dpi = 800 )
+		for i in range( len(pyrs_d) ) :
+			image = np.transpose( pyrs_d[i][ 0 ].detach().cpu().numpy() , (1 , 2 , 0) )  # 调整维度顺序 [C, H, W] → [H, W, C]
+			image = (image * 255).astype( np.uint8 )
+			plt.imshow( image )
+			plt.axis( 'off' )
+			# 保存图像到文件
+			plt.savefig( f'HF_d_{ i}.png' , bbox_inches = 'tight' , pad_inches = 0 , dpi = 800 )
 		
 		trans_pyrs = [ ]  # 被处理的金字塔（主通路暗图）
 		trans_pyrs_l = [ ]
@@ -338,12 +338,12 @@ class DENet( nn.Module ) :
 		trans_pyrs.append( pyrs_d[ -1 ] )
 		trans_pyrs_l.append( pyrs_l[ -1 ])
 		
-		# image = np.transpose( trans_LF[ 0 ].detach().cpu().numpy() , (1 , 2 , 0) )  # 调整维度顺序 [C, H, W] → [H, W, C]
-		# image = (image * 255).astype( np.uint8 )
-		# plt.imshow( image )
-		# plt.axis( 'off' )
-		# # 保存图像到文件
-		# plt.savefig( f'LF_enh.png' , bbox_inches = 'tight' , pad_inches = 0 , dpi = 800 )
+		image = np.transpose( trans_LF[ 0 ].detach().cpu().numpy() , (1 , 2 , 0) )  # 调整维度顺序 [C, H, W] → [H, W, C]
+		image = (image * 255).astype( np.uint8 )
+		plt.imshow( image )
+		plt.axis( 'off' )
+		# 保存图像到文件
+		plt.savefig( f'LF_enh.png' , bbox_inches = 'tight' , pad_inches = 0 , dpi = 800 )
 		
 		commom_guide = [ ]
 		commom_guide_l = [ ]
@@ -367,19 +367,19 @@ class DENet( nn.Module ) :
 			trans_HF = self.__getattr__( 'trans_high_layer_{}'.format( i ) )(
 					pyrs_d[ -2 - i ] , commom_guide[ i ] )
 			trans_pyrs.append( trans_HF )  # LF HF3 HF2 HF1
-			loss_HFenh +=F.l1_loss(trans_HF,pyrs_l[-2-i].detach()) + (1. - ssim(trans_HF,pyrs_l[-2-i].detach()))
+			loss_HFenh +=F.l1_loss(trans_HF,pyrs_d[-2-i].detach()) + (1. - ssim(trans_HF,pyrs_d[-2-i].detach()))
 			
 			trans_HF_l = self.__getattr__( 'trans_high_layer_{}'.format( i ) )(
 					pyrs_l[ -2 - i ] , commom_guide_l[ i ] )
 			trans_pyrs_l.append( trans_HF_l )
-			loss_HFenh_l +=F.l1_loss(trans_HF_l,pyrs_d[-2-i].detach()) + (1. - ssim(trans_HF_l,pyrs_d[-2-i].detach()))
+			loss_HFenh_l +=F.l1_loss(trans_HF_l,pyrs_l[-2-i].detach()) + (1. - ssim(trans_HF_l,pyrs_l[-2-i].detach()))
 			
-			# image = np.transpose( trans_HF[ 0 ].detach().cpu().numpy() , (1 , 2 , 0) )  # 调整维度顺序 [C, H, W] → [H, W, C]
-			# image = (image * 255).astype( np.uint8 )
-			# plt.imshow( image )
-			# plt.axis( 'off' )
-			# # 保存图像到文件
-			# plt.savefig( f'HF_enh_{i}.png' , bbox_inches = 'tight' , pad_inches = 0 , dpi = 800 )
+			image = np.transpose( trans_HF[ 0 ].detach().cpu().numpy() , (1 , 2 , 0) )  # 调整维度顺序 [C, H, W] → [H, W, C]
+			image = (image * 255).astype( np.uint8 )
+			plt.imshow( image )
+			plt.axis( 'off' )
+			# 保存图像到文件
+			plt.savefig( f'HF_enh_{i}.png' , bbox_inches = 'tight' , pad_inches = 0 , dpi = 800 )
 		
 		# HF_l + LF_l(ori)
 		# for i in range( len( trans_pyrs ) ) :
@@ -411,7 +411,7 @@ class DENet( nn.Module ) :
 		loss_equal = 0
 		for i in range( self.num_high ) :
 			loss_equal += F.mse_loss( trans_pyrs[ i+1 ],trans_pyrs_l[ i+1 ] )*0.1
-		# HFe+LF == img_ori
+		# HFe+LF_ori == img_ori
 		loss_resume = F.mse_loss(HF_d_LF_d , x_dark.detach() )*1. +(1. - ssim(HF_d_LF_d, x_dark.detach()))
 		loss_resume += F.mse_loss(HF_l_LF_l , x_light.detach() )*1.+(1. - ssim(HF_l_LF_l, x_light.detach()))
 		
@@ -425,26 +425,26 @@ class DENet( nn.Module ) :
 		loss_enhance=loss_equal+loss_resume+loss_HFenh+losses_rc+loss_smooth
 		
 		# print( '最终的DL' )
-		# image = np.transpose( HF_d_LF_l[ 0 ].detach().cpu().numpy() , (1 , 2 , 0) )  # 调整维度顺序 [C, H, W] → [H, W, C]
-		# image = (image * 255).astype( np.uint8 )
-		# plt.imshow( image )
-		# plt.axis( 'off' )  # 保存图像到文件
-		# plt.savefig( f'DL.png' , bbox_inches = 'tight' , pad_inches = 0 , dpi = 800 )
+		image = np.transpose( HF_d_LF_l[ 0 ].detach().cpu().numpy() , (1 , 2 , 0) )  # 调整维度顺序 [C, H, W] → [H, W, C]
+		image = (image * 255).astype( np.uint8 )
+		plt.imshow( image )
+		plt.axis( 'off' )  # 保存图像到文件
+		plt.savefig( f'DL.png' , bbox_inches = 'tight' , pad_inches = 0 , dpi = 800 )
 		#
 		# print( '最终的LD' )
-		# image = np.transpose( HF_l_LF_d[ 0 ].detach().cpu().numpy() , (1 , 2 , 0) )  # 调整维度顺序 [C, H, W] → [H, W, C]
-		# image = (image * 255).astype( np.uint8 )
-		# plt.imshow( image )
-		# plt.axis( 'off' )  # 保存图像到文件
-		# plt.savefig( f'LD.png' , bbox_inches = 'tight' , pad_inches = 0 , dpi = 800 )
+		image = np.transpose( HF_l_LF_d[ 0 ].detach().cpu().numpy() , (1 , 2 , 0) )  # 调整维度顺序 [C, H, W] → [H, W, C]
+		image = (image * 255).astype( np.uint8 )
+		plt.imshow( image )
+		plt.axis( 'off' )  # 保存图像到文件
+		plt.savefig( f'LD.png' , bbox_inches = 'tight' , pad_inches = 0 , dpi = 800 )
 		#
 		# print( '最终的DD' )
-		# image = np.transpose( HF_d_LF_d[ 0 ].detach().cpu().numpy() , (1 , 2 , 0) )  # 调整维度顺序 [C, H, W] → [H, W, C]
-		# image = (image * 255).astype( np.uint8 )
-		# plt.imshow( image )
-		# plt.axis( 'off' )# 保存图像到文件
-		# plt.savefig( f'DD.png' , bbox_inches = 'tight' , pad_inches = 0 , dpi = 800 )
-		# exit()
+		image = np.transpose( HF_d_LF_d[ 0 ].detach().cpu().numpy() , (1 , 2 , 0) )  # 调整维度顺序 [C, H, W] → [H, W, C]
+		image = (image * 255).astype( np.uint8 )
+		plt.imshow( image )
+		plt.axis( 'off' )# 保存图像到文件
+		plt.savefig( f'DD.png' , bbox_inches = 'tight' , pad_inches = 0 , dpi = 800 )
+		exit()
 		
 		return loss_enhance
 
