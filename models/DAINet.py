@@ -334,7 +334,7 @@ class DENet( nn.Module ) :
 		
 		trans_LF,guide = self.trans_low( pyrs_d[ -1 ] )
 		trans_LF_l,guide_l = self.trans_low( pyrs_l[ -1 ] )
-		# loss_LFenh = F.l1_loss( trans_LF , pyrs_d[ -1 ].detach() ) + (1. - ssim( trans_LF , pyrs_d[ -1 ].detach() ))
+		loss_LFenh = F.mse_loss( trans_LF , pyrs_l[ -1 ].detach() ) + (1. - ssim( trans_LF , pyrs_l[ -1 ].detach() ))
 		trans_pyrs.append( pyrs_d[ -1 ] )
 		trans_pyrs_l.append( pyrs_l[ -1 ])
 		
@@ -354,25 +354,18 @@ class DENet( nn.Module ) :
 			guide_l = self.__getattr__( 'up_guide_layer_{}'.format( i ) )( guide_l )
 			commom_guide_l.append( guide_l )
 		
-		# image = np.transpose( guide[ 0 ].detach().cpu().numpy() , (1 , 2 , 0) )  # 调整维度顺序 [C, H, W] → [H, W, C]
-		# image = (image * 255).astype( np.uint8 )
-		# plt.imshow( image )
-		# plt.axis( 'off' )
-		# # 保存图像到文件
-		# plt.savefig( f'common_guide_{i}.png' , bbox_inches = 'tight' , pad_inches = 0 , dpi = 800 )
-
 		loss_HFenh = 0
 		loss_HFenh_l = 0
 		for i in range( self.num_high ) :
 			trans_HF = self.__getattr__( 'trans_high_layer_{}'.format( i ) )(
 					pyrs_d[ -2 - i ] , commom_guide[ i ] )
 			trans_pyrs.append( trans_HF )  # LF HF3 HF2 HF1
-			loss_HFenh +=F.l1_loss(trans_HF,pyrs_d[-2-i].detach()) + (1. - ssim(trans_HF,pyrs_d[-2-i].detach()))
+			loss_HFenh +=F.mse_loss(trans_HF,pyrs_l[-2-i].detach()) + (1. - ssim(trans_HF,pyrs_l[-2-i].detach())) # 保证亮暗图都能提取到亮图高频
 			
 			trans_HF_l = self.__getattr__( 'trans_high_layer_{}'.format( i ) )(
 					pyrs_l[ -2 - i ] , commom_guide_l[ i ] )
 			trans_pyrs_l.append( trans_HF_l )
-			loss_HFenh_l +=F.l1_loss(trans_HF_l,pyrs_l[-2-i].detach()) + (1. - ssim(trans_HF_l,pyrs_l[-2-i].detach()))
+			loss_HFenh_l +=F.mse_loss(trans_HF_l,pyrs_l[-2-i].detach()) + (1. - ssim(trans_HF_l,pyrs_l[-2-i].detach()))
 			
 			# image = np.transpose( trans_HF[ 0 ].detach().cpu().numpy() , (1 , 2 , 0) )  # 调整维度顺序 [C, H, W] → [H, W, C]
 			# image = (image * 255).astype( np.uint8 )
@@ -402,10 +395,9 @@ class DENet( nn.Module ) :
 		
 		loss_equal = 0
 		for i in range( self.num_high ) :
-			loss_equal += F.mse_loss( trans_pyrs[ i+1 ],trans_pyrs_l[ i+1 ] )*0.1
+			loss_equal += F.mse_loss( trans_pyrs[ i+1 ],trans_pyrs_l[ i+1 ] )*cfg.WEIGHT.EQUAL_R
 		# HFe+LF_ori == img_ori
-		loss_resume = F.mse_loss(HF_d_LF_d , x_dark.detach() )*1. +(1. - ssim(HF_d_LF_d, x_dark.detach()))
-		loss_resume += F.mse_loss(HF_l_LF_l , x_light.detach() )*1.+(1. - ssim(HF_l_LF_l, x_light.detach()))
+		loss_resume = F.mse_loss(HF_d_LF_d , x_light.detach() )*1. +(1. - ssim(HF_d_LF_d, x_light.detach()))
 		
 		loss_smooth = 0
 		for i in range( self.num_high ) :
@@ -414,7 +406,7 @@ class DENet( nn.Module ) :
 		
 			losses_rc = (F.mse_loss( pyrs_d2[self.num_high-1-i] , trans_pyrs[i+1].detach() ) + F.mse_loss( pyrs_l2[self.num_high-1-i]  , trans_pyrs_l[i+1].detach() )) * cfg.WEIGHT.RC
 		
-		loss_enhance=loss_equal+loss_resume+loss_HFenh+losses_rc+loss_smooth
+		loss_enhance=loss_equal+loss_resume+loss_LFenh+loss_HFenh+losses_rc+loss_smooth #
 		
 		# print( '最终的DL' )
 		# image = np.transpose( HF_d_LF_l[ 0 ].detach().cpu().numpy() , (1 , 2 , 0) )  # 调整维度顺序 [C, H, W] → [H, W, C]
